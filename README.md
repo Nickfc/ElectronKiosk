@@ -47,7 +47,7 @@ If you’ve ever dreamed of rummaging through your sprawling ROM collection like
 
 2. **Clone this repo**  
    ```bash
-   git clone https://github.com/your-username/buildGamesJson.git
+   git clone https://github.com/Nickfc/ElectronKiosk/buildGamesJson.git
    cd buildGamesJson
    ```
 
