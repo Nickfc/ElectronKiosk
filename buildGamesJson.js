@@ -106,9 +106,7 @@ const UNMATCHED_JSON_PATH = path.join(OUTPUT_FOLDER, 'unmatched.json');
 // We'll also store console-based JSON, not a single monolithic JSON. Hooray for modular chaos!
 
 // Relative prefix for images in JSON
-const IMAGES_URL_PREFIX = path.normalize(
-  '/' + path.relative(process.cwd(), IMAGES_PATH).replace(/\\/g, '/')
-);
+const IMAGES_URL_PREFIX = '/' + path.relative(process.cwd(), IMAGES_PATH).replace(/\\/g, '/');
 
 // Acceptable ROM file extensions. No weird .exe or .pdf "ROMs," please.
 const VALID_ROM_EXTENSIONS = new Set([
@@ -233,7 +231,9 @@ function getAgeRatings(ageRatings) {
  * Because the file system doesn't like certain characters, we purge them like medieval heretics.
  */
 function sanitizeForFileName(str) {
-  let sanitized = str.replace(/[<>:"/\\|?*]+/g, '').trim();
+  let sanitized = str.replace(/[<>:"\\|?*]+/g, '').trim(); // Remove illegal filename characters except '/'
+  sanitized = sanitized.replace(/\//g, ' - '); // Replace '/' with ' - '
+  sanitized = sanitized.replace(/\s+/g, ' '); // Replace multiple spaces with single space
   while (sanitized.endsWith('.') || sanitized.endsWith(' ')) {
     sanitized = sanitized.slice(0, -1);
   }
@@ -243,12 +243,7 @@ function sanitizeForFileName(str) {
 /**
  * Normalizes our images prefix to ensure we start with a slash. Because consistency is king.
  */
-function normalizeImagesPrefix() {
-  if (!IMAGES_URL_PREFIX.startsWith('/')) {
-    return '/' + IMAGES_URL_PREFIX;
-  }
-  return IMAGES_URL_PREFIX;
-}
+// Removed normalizeImagesPrefix function since IMAGES_URL_PREFIX is already normalized
 
 /**
  * Short path for cover image, to store in JSON. 
@@ -257,7 +252,7 @@ function normalizeImagesPrefix() {
 function getCoverImageShortPath(consoleName, gameTitle) {
   const c = sanitizeForFileName(consoleName);
   const g = sanitizeForFileName(gameTitle);
-  return `${normalizeImagesPrefix()}/${c}/${g}/cover.jpg`;
+  return `${IMAGES_URL_PREFIX}/${c}/${g}/cover.jpg`;
 }
 
 /**
@@ -267,7 +262,7 @@ function getCoverImageShortPath(consoleName, gameTitle) {
 function getScreenshotShortPath(consoleName, gameTitle, index) {
   const c = sanitizeForFileName(consoleName);
   const g = sanitizeForFileName(gameTitle);
-  return `${normalizeImagesPrefix()}/${c}/${g}/screenshots/${index}.jpg`;
+  return `${IMAGES_URL_PREFIX}/${c}/${g}/screenshots/${index}.jpg`;
 }
 
 /**
@@ -751,7 +746,7 @@ function collectGameEntries() {
 
     const hasFiles = subEntries.some((e) => !e.isDirectory());
     if (hasFiles) {
-      const consoleName = relativePathParts.join(' / ').trim();
+      const consoleName = relativePathParts.join('/').replace(/\s+/g, ' ').trim();
       scanDirectoryForGames(folderPath, consoleName);
     }
   }
