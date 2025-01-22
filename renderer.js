@@ -10,7 +10,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const closeMenuButton = document.getElementById('closeMenuButton');
     const menuOverlay = document.getElementById('menuOverlay');
   
-    // Modal elements (same as before)
+    // Modal elements
     const gameModal = document.getElementById('gameModal');
     const modalBackground = document.getElementById('modalBackground');
     const modalGameTitle = document.getElementById('modalGameTitle');
@@ -21,6 +21,8 @@ window.addEventListener('DOMContentLoaded', () => {
   
     let selectedGame = null;
     let allConsoles = [];
+    let allGameItems = [];
+    let focusedGameItemIndex = 0;
   
     // Variable to control whether to show games without images
     const showGamesWithoutImages = false;
@@ -51,7 +53,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Function to populate the front page with console rows
     function populateFrontPage(consoles) {
       mainContent.innerHTML = '';
-  
+      allGameItems = [];
       consoles.forEach((console, consoleIndex) => {
         let games;
         try {
@@ -97,6 +99,7 @@ window.addEventListener('DOMContentLoaded', () => {
         games.forEach((game, gameIndex) => {
           const gameItem = createGameItem(game, gameIndex);
           gameCarousel.appendChild(gameItem);
+          allGameItems.push(gameItem); // Collect all game items
         });
   
         // Append to console row
@@ -106,6 +109,11 @@ window.addEventListener('DOMContentLoaded', () => {
         // Append console row to main content
         mainContent.appendChild(consoleRow);
       });
+  
+      // Initialize focus on the first game item
+      if (allGameItems.length > 0) {
+        focusGameItem(0);
+      }
     }
   
     // Function to create a game item element
@@ -151,6 +159,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
   
       mainContent.innerHTML = '';
+      allGameItems = [];
   
       const consoleHeader = document.createElement('h2');
       consoleHeader.textContent = console.console;
@@ -161,15 +170,155 @@ window.addEventListener('DOMContentLoaded', () => {
       games.forEach((game, index) => {
         const gameItem = createGameItem(game, index);
         gamesGrid.appendChild(gameItem);
+        allGameItems.push(gameItem); // Collect all game items
       });
   
       mainContent.appendChild(consoleHeader);
       mainContent.appendChild(gamesGrid);
+  
+      // Initialize focus on the first game item
+      if (allGameItems.length > 0) {
+        focusGameItem(0);
+      }
     }
   
-    // Event listener for game item click (handled in createGameItem)
+    // Function to focus on a game item
+    function focusGameItem(index) {
+      if (allGameItems.length === 0) return;
   
-    // Function to open game modal and display details (same as before)
+      // Remove focus class from all items
+      allGameItems.forEach((item) => {
+        item.classList.remove('focused');
+      });
+  
+      // Keep index within bounds
+      if (index < 0) {
+        index = allGameItems.length - 1;
+      } else if (index >= allGameItems.length) {
+        index = 0;
+      }
+  
+      focusedGameItemIndex = index;
+      const currentItem = allGameItems[focusedGameItemIndex];
+      currentItem.classList.add('focused');
+  
+      // Scroll into view if needed
+      currentItem.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  
+    // Event listener for keydown events
+    document.addEventListener('keydown', (event) => {
+      if (gameModal.classList.contains('hidden')) {
+        switch (event.key) {
+          case 'ArrowLeft':
+            focusGameItem(focusedGameItemIndex - 1);
+            break;
+          case 'ArrowRight':
+            focusGameItem(focusedGameItemIndex + 1);
+            break;
+          case 'ArrowUp':
+            focusGameItem(focusedGameItemIndex - 5); // Adjust based on columns
+            break;
+          case 'ArrowDown':
+            focusGameItem(focusedGameItemIndex + 5); // Adjust based on columns
+            break;
+          case 'Enter':
+            // Simulate click on focused item
+            const currentItem = allGameItems[focusedGameItemIndex];
+            currentItem.click();
+            break;
+          default:
+            break;
+        }
+      } else {
+        // Modal is open
+        switch (event.key) {
+          case 'ArrowLeft':
+          case 'ArrowRight':
+            // Optional: Add navigation between modal buttons if needed
+            break;
+          case 'Enter':
+            modalLaunchButton.click();
+            break;
+          case 'Escape':
+            closeGameModal();
+            break;
+          default:
+            break;
+        }
+      }
+    });
+  
+    // Gamepad support
+    let gamepadIndex = null;
+    function gamepadLoop() {
+      const gamepads = navigator.getGamepads();
+      const gamepad = gamepads[gamepadIndex] || gamepads[0];
+  
+      if (gamepad) {
+        // D-pad navigation or left stick
+        const up = gamepad.buttons[12].pressed || gamepad.axes[1] < -0.5;
+        const down = gamepad.buttons[13].pressed || gamepad.axes[1] > 0.5;
+        const left = gamepad.buttons[14].pressed || gamepad.axes[0] < -0.5;
+        const right = gamepad.buttons[15].pressed || gamepad.axes[0] > 0.5;
+        const select = gamepad.buttons[0].pressed; // 'A' button
+        const back = gamepad.buttons[1].pressed; // 'B' button
+  
+        // Handle navigation with debounce
+        if (!gamepad.lastButtonStates) {
+          gamepad.lastButtonStates = [];
+        }
+  
+        function buttonPressed(index) {
+          const pressed = gamepad.buttons[index].pressed;
+          const lastPressed = gamepad.lastButtonStates[index] || false;
+          gamepad.lastButtonStates[index] = pressed;
+          return pressed && !lastPressed;
+        }
+  
+        if (buttonPressed(12) || up) {
+          focusGameItem(focusedGameItemIndex - 5);
+        } else if (buttonPressed(13) || down) {
+          focusGameItem(focusedGameItemIndex + 5);
+        } else if (buttonPressed(14) || left) {
+          focusGameItem(focusedGameItemIndex - 1);
+        } else if (buttonPressed(15) || right) {
+          focusGameItem(focusedGameItemIndex + 1);
+        } else if (buttonPressed(0)) {
+          // 'A' button
+          if (gameModal.classList.contains('hidden')) {
+            const currentItem = allGameItems[focusedGameItemIndex];
+            currentItem.click();
+          } else {
+            modalLaunchButton.click();
+          }
+        } else if (buttonPressed(1)) {
+          // 'B' button
+          if (!gameModal.classList.contains('hidden')) {
+            closeGameModal();
+          }
+        }
+      }
+  
+      requestAnimationFrame(gamepadLoop);
+    }
+  
+    window.addEventListener('gamepadconnected', (e) => {
+      gamepadIndex = e.gamepad.index;
+      gamepadLoop();
+    });
+  
+    window.addEventListener('gamepaddisconnected', (e) => {
+      if (gamepadIndex === e.gamepad.index) {
+        gamepadIndex = null;
+      }
+    });
+  
+    // Function to open game modal and display details
     function openGameModal(game) {
       modalGameTitle.textContent = game.Title;
       modalGameDescription.textContent = game.Description || 'No description available.';

@@ -9,6 +9,9 @@ body {
   
   /* Header */
   #header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
     display: flex;
     align-items: center;
     padding: 20px;
@@ -137,6 +140,7 @@ body {
     margin-right: 10px;
     width: 200px;
     cursor: pointer;
+    outline: none;
   }
   
   .game-item img {
@@ -146,6 +150,13 @@ body {
   }
   
   .game-item:hover img {
+    transform: scale(1.05);
+    transition: transform 0.3s;
+  }
+  
+  /* Focused Game Item */
+  .game-item.focused img {
+    border: 3px solid #e50914; /* Highlight border */
     transform: scale(1.05);
     transition: transform 0.3s;
   }
@@ -161,7 +172,7 @@ body {
     margin: 10px;
   }
   
-  /* Modal styles (same as before) */
+  /* Modal styles */
   .modal {
     position: fixed;
     top: 0;
@@ -170,6 +181,10 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.9);
     z-index: 2000;
+  }
+  
+  .modal.hidden {
+    display: none;
   }
   
   .modal-content {
@@ -269,4 +284,9 @@ body {
     10% { opacity: 1; }
     90% { opacity: 1; }
     100% { opacity: 0; }
+  }
+  
+  /* Hidden class */
+  .hidden {
+    display: none;
   }
