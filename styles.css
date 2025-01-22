@@ -225,12 +225,49 @@ body {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    position: relative; /* For positioning the alphabet nav */
   }
   
   .games-grid .game-item {
     margin: 10px;
   }
   
+  /* Alphabet Navigation Bar */
+  #alphabetNav {
+    position: fixed;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px 0 0 10px;
+    padding: 10px;
+    z-index: 1500;
+  }
+  
+  #alphabetNav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  #alphabetNav ul li {
+    padding: 5px 10px;
+    text-align: center;
+    cursor: pointer; /* Added to indicate clickable items */
+    color: #fff;
+    font-size: 1.2em;
+  }
+  
+  #alphabetNav ul li.focused,
+  #alphabetNav ul li:hover {
+    background-color: #e50914; /* Netflix red */
+    color: #fff;
+  }
+  
+  #alphabetNav.hidden {
+    display: none;
+  }
+
   /* Modal styles */
   .modal {
     position: fixed;

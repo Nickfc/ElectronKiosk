@@ -19,6 +19,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const modalLaunchButton = document.getElementById('modalLaunchButton');
     const modalCloseButton = document.getElementById('modalCloseButton');
 
+    // Alphabet Navigation elements
+    const alphabetNav = document.getElementById('alphabetNav');
+    const alphabetList = document.getElementById('alphabetList');
+
     // Home button
     const homeButton = document.getElementById('homeButton');
 
@@ -30,6 +34,9 @@ window.addEventListener('DOMContentLoaded', () => {
     let currentView = 'frontPage'; // 'frontPage' or 'library'
     let isGameRunning = false; // Flag to control input when a game is running
     let focusedMenuIndex = 0; // For side menu navigation
+    let alphabet = []; // For alphabet navigation
+    let alphabetFocusedIndex = 0; // Focused index in the alphabet list
+    let isAlphabetNavActive = false; // Flag to indicate if the alphabet nav is active
 
     // Variable to control whether to show games without images
     const showGamesWithoutImages = false;
@@ -62,6 +69,7 @@ window.addEventListener('DOMContentLoaded', () => {
       mainContent.innerHTML = '';
       gameItemsGrid = [];
       currentView = 'frontPage';
+      alphabetNav.classList.add('hidden'); // Hide alphabet nav
 
       consoles.forEach((console, consoleIndex) => {
         let games;
@@ -269,6 +277,9 @@ window.addEventListener('DOMContentLoaded', () => {
       gameItemsGrid = [];
       currentView = 'library';
 
+      // Build alphabet list
+      buildAlphabetNav(games);
+
       const consoleHeader = document.createElement('h2');
       consoleHeader.textContent = console.console;
 
@@ -299,9 +310,45 @@ window.addEventListener('DOMContentLoaded', () => {
       // Initialize focus on the first game item
       focusedRowIndex = 0;
       focusedColumnIndex = 0;
+      isAlphabetNavActive = false;
       if (gameItemsGrid.length > 0 && gameItemsGrid[0].length > 0) {
         focusGameItem(gameItemsGrid[0][0]);
       }
+    }
+
+    // Function to build the alphabet navigation bar
+    function buildAlphabetNav(games) {
+      // Extract unique first letters
+      const lettersSet = new Set();
+      games.forEach((game) => {
+        const firstChar = game.Title[0].toUpperCase();
+        const letter = /^[A-Z]$/.test(firstChar) ? firstChar : '#';
+        lettersSet.add(letter);
+      });
+
+      alphabet = Array.from(lettersSet).sort();
+      if (lettersSet.has('#')) {
+        alphabet = alphabet.filter((letter) => letter !== '#').concat('#');
+      }
+
+      // Populate alphabet list
+      alphabetList.innerHTML = '';
+      alphabet.forEach((letter, index) => {
+        const li = document.createElement('li');
+        li.textContent = letter;
+        li.dataset.index = index;
+        li.addEventListener('click', () => {
+          jumpToLetter(letter);
+        });
+        li.addEventListener('mouseenter', () => {
+          focusAlphabetItem(index);
+          isAlphabetNavActive = true;
+        });
+        alphabetList.appendChild(li);
+      });
+
+      // Show alphabet nav
+      alphabetNav.classList.remove('hidden');
     }
 
     // Function to focus on a game item
@@ -314,12 +361,29 @@ window.addEventListener('DOMContentLoaded', () => {
 
       item.classList.add('focused');
 
-      // Scroll into view if needed
+      // Scroll into view
       item.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'center',
+        inline: 'nearest',
       });
+    }
+
+    // Function to focus on an alphabet item
+    function focusAlphabetItem(index) {
+      const items = alphabetList.children;
+      if (index < 0) index = 0;
+      if (index >= items.length) index = items.length - 1;
+      alphabetFocusedIndex = index;
+
+      // Remove focus class from previous item
+      const focusedElements = document.querySelectorAll('#alphabetList li.focused');
+      focusedElements.forEach((el) => el.classList.remove('focused'));
+
+      const item = items[alphabetFocusedIndex];
+      if (item) {
+        item.classList.add('focused');
+      }
     }
 
     // Function to get the next item based on row and column indices
@@ -335,6 +399,25 @@ window.addEventListener('DOMContentLoaded', () => {
       return null;
     }
 
+    // Function to jump to a specific letter
+    function jumpToLetter(letter) {
+      for (let r = 0; r < gameItemsGrid.length; r++) {
+        for (let c = 0; c < gameItemsGrid[r].length; c++) {
+          const item = gameItemsGrid[r][c];
+          const gameTitle = item.gameData.game.Title;
+          const firstChar = gameTitle[0].toUpperCase();
+          const itemLetter = /^[A-Z]$/.test(firstChar) ? firstChar : '#';
+          if (itemLetter === letter) {
+            focusedRowIndex = r;
+            focusedColumnIndex = c;
+            isAlphabetNavActive = false;
+            focusGameItem(item);
+            return;
+          }
+        }
+      }
+    }
+
     // Event listener for keydown events
     let keyDebounce = false;
     document.addEventListener('keydown', (event) => {
@@ -346,60 +429,147 @@ window.addEventListener('DOMContentLoaded', () => {
       }, 100); // Adjust debounce time as needed
 
       if (gameModal.classList.contains('hidden')) {
-        let nextItem = null;
-        switch (event.key) {
-          case 'ArrowLeft':
-            focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
-            nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            break;
-          case 'ArrowRight':
-            focusedColumnIndex += 1;
-            nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            // Adjust if no item in that column
-            if (!nextItem) {
-              focusedColumnIndex -= 1;
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+        if (currentView === 'library') {
+          if (isAlphabetNavActive) {
+            // Alphabet navigation
+            switch (event.key) {
+              case 'ArrowUp':
+                focusAlphabetItem(alphabetFocusedIndex - 1);
+                break;
+              case 'ArrowDown':
+                focusAlphabetItem(alphabetFocusedIndex + 1);
+                break;
+              case 'Enter':
+                const selectedLetter = alphabet[alphabetFocusedIndex];
+                jumpToLetter(selectedLetter);
+                break;
+              case 'ArrowLeft':
+                isAlphabetNavActive = false;
+                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+                break;
+              case 'Escape':
+              case 'Backspace':
+                isAlphabetNavActive = false;
+                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+                break;
+              default:
+                break;
             }
-            break;
-          case 'ArrowUp':
-            focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
-            // Adjust column index if out of bounds
-            nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            if (!nextItem) {
-              focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+          } else {
+            // Game items navigation
+            let nextItem = null;
+            switch (event.key) {
+              case 'ArrowLeft':
+                focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                break;
+              case 'ArrowRight':
+                focusedColumnIndex += 1;
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                // Adjust if no item in that column
+                if (!nextItem) {
+                  focusedColumnIndex -= 1;
+                  // Move to alphabet nav
+                  isAlphabetNavActive = true;
+                  focusAlphabetItem(alphabetFocusedIndex);
+                }
+                break;
+              case 'ArrowUp':
+                focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
+                // Adjust column index if out of bounds
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (!nextItem) {
+                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
+                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                }
+                break;
+              case 'ArrowDown':
+                focusedRowIndex += 1;
+                // Adjust if no more rows
+                if (focusedRowIndex >= gameItemsGrid.length) {
+                  focusedRowIndex -= 1;
+                }
+                // Adjust column index if out of bounds
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (!nextItem) {
+                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
+                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                }
+                break;
+              case 'Enter':
+                const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (focusedItem) {
+                  focusedItem.click();
+                }
+                break;
+              case 'Backspace':
+              case 'Escape':
+                // Go back to front page
+                populateFrontPage(allConsoles);
+                break;
+              default:
+                break;
             }
-            break;
-          case 'ArrowDown':
-            focusedRowIndex += 1;
-            // Adjust if no more rows
-            if (focusedRowIndex >= gameItemsGrid.length) {
-              focusedRowIndex -= 1;
-            }
-            // Adjust column index if out of bounds
-            nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            if (!nextItem) {
-              focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            }
-            break;
-          case 'Enter':
-            const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            if (focusedItem) {
-              focusedItem.click();
-            }
-            break;
-          default:
-            break;
-        }
 
-        if (nextItem) {
-          focusGameItem(nextItem);
+            if (nextItem) {
+              focusGameItem(nextItem);
+            }
+          }
+        } else {
+          // Front page navigation or other views
+          let nextItem = null;
+          switch (event.key) {
+            case 'ArrowLeft':
+              focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
+              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              break;
+            case 'ArrowRight':
+              focusedColumnIndex += 1;
+              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              if (!nextItem) {
+                focusedColumnIndex -= 1;
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              }
+              break;
+            case 'ArrowUp':
+              focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
+              // Adjust column index if out of bounds
+              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              if (!nextItem) {
+                focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              }
+              break;
+            case 'ArrowDown':
+              focusedRowIndex += 1;
+              if (focusedRowIndex >= gameItemsGrid.length) {
+                focusedRowIndex -= 1;
+              }
+              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              if (!nextItem) {
+                focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              }
+              break;
+            case 'Enter':
+              const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              if (focusedItem) {
+                focusedItem.click();
+              }
+              break;
+            default:
+              break;
+          }
+
+          if (nextItem) {
+            focusGameItem(nextItem);
+          }
         }
       } else {
         // Modal is open
         switch (event.key) {
           case 'Escape':
+          case 'Backspace':
             closeGameModal();
             break;
           default:
@@ -410,7 +580,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Gamepad support
     let gamepadIndex = null;
-    let gamepadDebounce = false;
+
+    // Variables to track previous button states for edge detection
+    let prevSelectPressed = false;
+    let prevBackPressed = false;
+    let prevStartButtonPressed = false;
+    let prevSelectButtonPressed = false;
+    let prevUpPressed = false;
+    let prevDownPressed = false;
+    let prevLeftPressed = false;
+    let prevRightPressed = false;
+
     function gamepadLoop() {
       if (isGameRunning) {
         requestAnimationFrame(gamepadLoop);
@@ -422,62 +602,116 @@ window.addEventListener('DOMContentLoaded', () => {
 
       if (gamepad) {
         // D-pad navigation or left stick
-        const up = gamepad.buttons[12]?.pressed || gamepad.axes[1] < -0.5;
-        const down = gamepad.buttons[13]?.pressed || gamepad.axes[1] > 0.5;
-        const left = gamepad.buttons[14]?.pressed || gamepad.axes[0] < -0.5;
-        const right = gamepad.buttons[15]?.pressed || gamepad.axes[0] > 0.5;
-        const select = gamepad.buttons[0]?.pressed; // 'A' button
-        const back = gamepad.buttons[1]?.pressed; // 'B' button
-        const startButton = gamepad.buttons[9]?.pressed; // 'Start' button
-        const selectButton = gamepad.buttons[8]?.pressed; // 'Select' button
+        const upPressed = gamepad.buttons[12]?.pressed || gamepad.axes[1] < -0.5;
+        const downPressed = gamepad.buttons[13]?.pressed || gamepad.axes[1] > 0.5;
+        const leftPressed = gamepad.buttons[14]?.pressed || gamepad.axes[0] < -0.5;
+        const rightPressed = gamepad.buttons[15]?.pressed || gamepad.axes[0] > 0.5;
+        const selectPressed = gamepad.buttons[0]?.pressed; // 'A' button
+        const backPressed = gamepad.buttons[1]?.pressed; // 'B' button
+        const startButtonPressed = gamepad.buttons[9]?.pressed; // 'Start' button
+        const selectButtonPressed = gamepad.buttons[8]?.pressed; // 'Select' button
 
-        if (!gamepadDebounce) {
-          if (startButton || selectButton) {
-            if (sideMenu.classList.contains('open')) {
-              closeSideMenu();
-            } else {
-              openSideMenu();
+        // Edge detection for button presses
+        const up = upPressed && !prevUpPressed;
+        const down = downPressed && !prevDownPressed;
+        const left = leftPressed && !prevLeftPressed;
+        const right = rightPressed && !prevRightPressed;
+        const select = selectPressed && !prevSelectPressed;
+        const back = backPressed && !prevBackPressed;
+        const startButton = startButtonPressed && !prevStartButtonPressed;
+        const selectButton = selectButtonPressed && !prevSelectButtonPressed;
+
+        if (startButton || selectButton) {
+          if (sideMenu.classList.contains('open')) {
+            closeSideMenu();
+          } else {
+            openSideMenu();
+          }
+        } else if (sideMenu.classList.contains('open')) {
+          // Side menu is open
+          if (up) {
+            focusedMenuIndex = Math.max(focusedMenuIndex - 1, 0);
+            focusMenuItem(consoleList.children[focusedMenuIndex]);
+          } else if (down) {
+            focusedMenuIndex = Math.min(focusedMenuIndex + 1, consoleList.children.length - 1);
+            focusMenuItem(consoleList.children[focusedMenuIndex]);
+          } else if (select) {
+            // Trigger click on focused menu item
+            const focusedItem = consoleList.children[focusedMenuIndex];
+            if (focusedItem) {
+              focusedItem.click();
             }
-            gamepadDebounce = true;
-            setTimeout(() => {
-              gamepadDebounce = false;
-            }, 200); // Debounce time for gamepad
-          } else if (sideMenu.classList.contains('open')) {
-            // Side menu is open
-            if (up) {
-              focusedMenuIndex = Math.max(focusedMenuIndex - 1, 0);
-              focusMenuItem(consoleList.children[focusedMenuIndex]);
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200);
-            } else if (down) {
-              focusedMenuIndex = Math.min(focusedMenuIndex + 1, consoleList.children.length - 1);
-              focusMenuItem(consoleList.children[focusedMenuIndex]);
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200);
-            } else if (select) {
-              // Trigger click on focused menu item
-              const focusedItem = consoleList.children[focusedMenuIndex];
-              if (focusedItem) {
-                focusedItem.click();
+          } else if (back) {
+            // Close side menu
+            closeSideMenu();
+          }
+        } else if (gameModal.classList.contains('hidden')) {
+          if (currentView === 'library') {
+            if (isAlphabetNavActive) {
+              // Alphabet navigation
+              if (up) {
+                focusAlphabetItem(alphabetFocusedIndex - 1);
+              } else if (down) {
+                focusAlphabetItem(alphabetFocusedIndex + 1);
+              } else if (select) {
+                const selectedLetter = alphabet[alphabetFocusedIndex];
+                jumpToLetter(selectedLetter);
+                isAlphabetNavActive = false;
+              } else if (left) {
+                isAlphabetNavActive = false;
+                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+              } else if (back) {
+                isAlphabetNavActive = false;
+                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
               }
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200);
-            } else if (back) {
-              // Close side menu
-              closeSideMenu();
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200);
+            } else {
+              // Game items navigation
+              let nextItem = null;
+              if (up) {
+                focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (!nextItem) {
+                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
+                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                }
+              } else if (down) {
+                focusedRowIndex += 1;
+                if (focusedRowIndex >= gameItemsGrid.length) {
+                  focusedRowIndex -= 1;
+                }
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (!nextItem) {
+                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
+                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                }
+              } else if (left) {
+                focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+              } else if (right) {
+                focusedColumnIndex += 1;
+                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (!nextItem) {
+                  focusedColumnIndex -= 1;
+                  // Move to alphabet nav
+                  isAlphabetNavActive = true;
+                  focusAlphabetItem(alphabetFocusedIndex);
+                }
+              } else if (select) {
+                const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                if (focusedItem) {
+                  focusedItem.click();
+                }
+              } else if (back) {
+                // Go back to front page
+                populateFrontPage(allConsoles);
+              }
+
+              if (nextItem) {
+                focusGameItem(nextItem);
+              }
             }
-          } else if (gameModal.classList.contains('hidden')) {
-            // Main content navigation
+          } else {
+            // Front page navigation
             let nextItem = null;
             if (up) {
               focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
@@ -511,38 +745,30 @@ window.addEventListener('DOMContentLoaded', () => {
               if (focusedItem) {
                 focusedItem.click();
               }
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200);
-            } else if (back) {
-              // Do nothing for now
             }
 
             if (nextItem) {
               focusGameItem(nextItem);
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200);
-            }
-          } else {
-            // Modal is open
-            if (back) {
-              closeGameModal();
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200); // Debounce time for gamepad
-            } else if (select) {
-              modalLaunchButton.click();
-              gamepadDebounce = true;
-              setTimeout(() => {
-                gamepadDebounce = false;
-              }, 200); // Debounce time for gamepad
             }
           }
+        } else {
+          // Modal is open
+          if (back) {
+            closeGameModal();
+          } else if (select) {
+            modalLaunchButton.click();
+          }
         }
+
+        // Update previous button states
+        prevSelectPressed = selectPressed;
+        prevBackPressed = backPressed;
+        prevStartButtonPressed = startButtonPressed;
+        prevSelectButtonPressed = selectButtonPressed;
+        prevUpPressed = upPressed;
+        prevDownPressed = downPressed;
+        prevLeftPressed = leftPressed;
+        prevRightPressed = rightPressed;
       }
 
       requestAnimationFrame(gamepadLoop);
