@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,38 +6,29 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="container">
-    <!-- Sidebar -->
-    <div id="sidebar">
-      <h2>Consoles</h2>
-      <select id="consoleSelect">
-        <option value="">Select Console</option>
-      </select>
+  <div id="header">
+    <h1>Retro Game Launcher</h1>
+    <select id="consoleSelect">
+      <option value="">Select Console</option>
+    </select>
+  </div>
 
-      <h2>Filters</h2>
-      <input type="text" id="searchInput" placeholder="Search games...">
-      <select id="genreFilter">
-        <option value="">All Genres</option>
-      </select>
-      <select id="yearFilter">
-        <option value="">All Years</option>
-      </select>
-      <select id="developerFilter">
-        <option value="">All Developers</option>
-      </select>
-      <ul id="gameList" tabindex="0"></ul>
-    </div>
+  <div id="gameGrid"></div>
 
-    <!-- Content -->
-    <div id="content">
-      <div id="gameDetails">
-        <h1 id="gameTitle">Select a game</h1>
-        <img id="gameCover" src="" alt="Game Cover">
-        <p id="gameDescription"></p>
-        <button id="launchButton" disabled>Launch Game</button>
+  <!-- Game Details Modal -->
+  <div id="gameModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-background" id="modalBackground"></div>
+      <div class="modal-body">
+        <h2 id="modalGameTitle"></h2>
+        <img id="modalGameCover" src="" alt="Game Cover">
+        <p id="modalGameDescription"></p>
+        <button id="modalLaunchButton">Launch Game</button>
+        <button id="modalCloseButton">Close</button>
       </div>
     </div>
   </div>
+
   <div id="errorDisplay" class="hidden"></div>
   <script src="renderer.js"></script>
 </body>

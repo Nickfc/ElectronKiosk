@@ -3,132 +3,144 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1e1e1e; /* Dark background */
-    color: #f0f0f0; /* Light text color */
+    background-color: #000; /* Black background */
+    color: #fff; /* White text color */
   }
-
-  #container {
+  
+  #header {
     display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-
-  @media (min-width: 800px) {
-    #container {
-      flex-direction: row;
-    }
-  }
-
-  #sidebar {
-    width: 100%;
-    background-color: #252526; /* Darker sidebar */
-    padding: 10px;
-    overflow-y: auto;
-    border-right: 1px solid #333;
-  }
-
-  @media (min-width: 800px) {
-    #sidebar {
-      width: 300px;
-    }
-  }
-
-  #sidebar h2 {
-    margin-top: 20px;
-    color: #f0f0f0;
-  }
-
-  #consoleSelect,
-  #searchInput,
-  #genreFilter,
-  #yearFilter,
-  #developerFilter {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 10px;
-    background-color: #3c3c3c;
-    color: #f0f0f0;
-    border: 1px solid #555;
-  }
-
-  #gameList {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    outline: none;
-  }
-
-  #gameList li {
-    padding: 10px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  #gameList li:hover {
-    background-color: #3c3c3c;
-  }
-
-  #gameList li.selected {
-    background-color: #007acc;
-  }
-
-  #content {
-    flex: 1;
+    align-items: center;
     padding: 20px;
-    overflow-y: auto;
-    background-color: #1e1e1e;
+    background-color: #141414; /* Netflix-like dark background */
   }
-
-  #gameDetails {
-    max-width: 800px;
-    margin: 0 auto;
-    text-align: center;
+  
+  #header h1 {
+    flex: 1;
+    margin: 0;
   }
-
-  #gameTitle {
-    margin-bottom: 20px;
-    color: #f0f0f0;
-    font-size: 2em;
+  
+  #consoleSelect {
+    padding: 5px;
+    background-color: #000;
+    color: #fff;
+    border: 1px solid #333;
   }
-
-  #gameCover {
-    max-width: 100%;
+  
+  #gameGrid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .game-item {
+    position: relative;
+    margin: 10px;
+    width: 200px;
+    cursor: pointer;
+  }
+  
+  .game-item img {
+    width: 100%;
     height: auto;
-    border-radius: 8px;
+    border-radius: 5px;
+  }
+  
+  .game-item:hover img {
+    transform: scale(1.05);
     transition: transform 0.3s;
   }
-
-  #gameCover:hover {
-    transform: scale(1.05);
+  
+  .hidden {
+    display: none;
   }
-
-  #gameDescription {
+  
+  /* Modal styles */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 1000px;
+    margin: 50px auto;
+    background-color: transparent;
+  }
+  
+  .modal-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    z-index: -1;
+  }
+  
+  .modal-body {
+    position: relative;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    text-align: center;
+    border-radius: 10px;
+  }
+  
+  .modal-body h2 {
+    margin-top: 0;
+    color: #fff;
+    font-size: 2em;
+  }
+  
+  .modal-body img {
+    max-width: 100%;
+    height: auto;
     margin: 20px 0;
-    text-align: left;
-    color: #d0d0d0;
+    border-radius: 10px;
+  }
+  
+  .modal-body p {
+    color: #ddd;
     line-height: 1.6;
+    font-size: 1.1em;
   }
-
-  #launchButton {
-    padding: 10px 20px;
-    font-size: 16px;
+  
+  .modal-body button {
+    padding: 15px 30px;
+    font-size: 18px;
+    margin: 10px;
     cursor: pointer;
-    background-color: #007acc;
-    color: #ffffff;
+    border-radius: 5px;
+  }
+  
+  #modalLaunchButton {
+    background-color: #e50914; /* Netflix red */
+    color: #fff;
     border: none;
-    border-radius: 4px;
-    transition: background-color 0.3s;
   }
-
-  #launchButton:hover:not(:disabled) {
-    background-color: #005f99;
+  
+  #modalLaunchButton:hover {
+    background-color: #f40612;
   }
-
-  #launchButton:disabled {
-    background-color: #555;
-    cursor: not-allowed;
+  
+  #modalCloseButton {
+    background-color: #333;
+    color: #fff;
+    border: none;
   }
-
+  
+  #modalCloseButton:hover {
+    background-color: #444;
+  }
+  
   #errorDisplay {
     position: fixed;
     bottom: 20px;
@@ -139,11 +151,11 @@ body {
     border-radius: 4px;
     animation: fadeInOut 5s forwards;
   }
-
+  
   #errorDisplay.hidden {
     display: none;
   }
-
+  
   @keyframes fadeInOut {
     0% { opacity: 0; }
     10% { opacity: 1; }
