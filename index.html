@@ -6,14 +6,28 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Side Menu -->
+  <div id="sideMenu" class="side-menu">
+    <div class="side-menu-header">
+      <h2>Consoles</h2>
+      <span id="closeMenuButton">&times;</span>
+    </div>
+    <ul id="consoleList">
+      <!-- Console list items will be populated here -->
+    </ul>
+  </div>
+  <div id="menuOverlay" class="menu-overlay hidden"></div>
+
+  <!-- Header -->
   <div id="header">
     <h1>Retro Game Launcher</h1>
-    <select id="consoleSelect">
-      <option value="">Select Console</option>
-    </select>
+    <button id="openMenuButton">&#9776;</button>
   </div>
 
-  <div id="gameGrid"></div>
+  <!-- Main Content -->
+  <div id="mainContent">
+    <!-- Console rows will be populated here -->
+  </div>
 
   <!-- Game Details Modal -->
   <div id="gameModal" class="modal hidden">

@@ -7,6 +7,7 @@ body {
     color: #fff; /* White text color */
   }
   
+  /* Header */
   #header {
     display: flex;
     align-items: center;
@@ -19,23 +20,121 @@ body {
     margin: 0;
   }
   
-  #consoleSelect {
-    padding: 5px;
-    background-color: #000;
+  #openMenuButton {
+    background: none;
+    border: none;
     color: #fff;
-    border: 1px solid #333;
+    font-size: 30px;
+    cursor: pointer;
   }
   
-  #gameGrid {
+  /* Side Menu */
+  .side-menu {
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100%;
+    background-color: #141414;
+    overflow-y: auto;
+    transition: left 0.3s;
+    z-index: 1000;
+  }
+  
+  .side-menu.open {
+    left: 0;
+  }
+  
+  .side-menu-header {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+  }
+  
+  .side-menu-header h2 {
+    margin: 0;
+  }
+  
+  #closeMenuButton {
+    cursor: pointer;
+    font-size: 24px;
+  }
+  
+  #consoleList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  #consoleList li {
+    padding: 15px;
+    cursor: pointer;
+  }
+  
+  #consoleList li:hover {
+    background-color: #333;
+  }
+  
+  /* Menu Overlay */
+  .menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 900;
+  }
+  
+  .menu-overlay.hidden {
+    display: none;
+  }
+  
+  /* Main Content */
+  #mainContent {
     padding: 20px;
   }
   
+  /* Console Row */
+  .console-row {
+    margin-bottom: 40px;
+  }
+  
+  .console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.5em;
+    margin-bottom: 10px;
+  }
+  
+  .view-all-button {
+    background: none;
+    border: none;
+    color: #e50914; /* Netflix red */
+    cursor: pointer;
+    font-size: 1em;
+  }
+  
+  .view-all-button:hover {
+    text-decoration: underline;
+  }
+  
+  .game-carousel {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+  
+  .game-carousel::-webkit-scrollbar {
+    display: none;
+  }
+  
   .game-item {
+    flex: 0 0 auto;
     position: relative;
-    margin: 10px;
+    margin-right: 10px;
     width: 200px;
     cursor: pointer;
   }
@@ -51,11 +150,18 @@ body {
     transition: transform 0.3s;
   }
   
-  .hidden {
-    display: none;
+  /* Games Grid (for full library view) */
+  .games-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
-  /* Modal styles */
+  .games-grid .game-item {
+    margin: 10px;
+  }
+  
+  /* Modal styles (same as before) */
   .modal {
     position: fixed;
     top: 0;
@@ -63,7 +169,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.9);
-    z-index: 1000;
+    z-index: 2000;
   }
   
   .modal-content {
@@ -141,6 +247,7 @@ body {
     background-color: #444;
   }
   
+  /* Error Display */
   #errorDisplay {
     position: fixed;
     bottom: 20px;
@@ -150,6 +257,7 @@ body {
     padding: 10px 20px;
     border-radius: 4px;
     animation: fadeInOut 5s forwards;
+    z-index: 2000;
   }
   
   #errorDisplay.hidden {
