@@ -23,7 +23,8 @@ body {
     margin: 0;
   }
   
-  #openMenuButton, #homeButton {
+  #openMenuButton,
+  #homeButton {
     background: none;
     border: none;
     color: #fff;
@@ -76,7 +77,8 @@ body {
     cursor: pointer;
   }
   
-  #consoleList li:hover {
+  #consoleList li:hover,
+  #consoleList li.focused {
     background-color: #333;
   }
   
@@ -98,6 +100,11 @@ body {
   /* Main Content */
   #mainContent {
     padding: 20px;
+    overflow-y: auto;
+  }
+  
+  #mainContent::-webkit-scrollbar {
+    display: none; /* Hide scrollbar */
   }
   
   /* Console Row */
@@ -132,7 +139,7 @@ body {
   }
   
   .game-carousel::-webkit-scrollbar {
-    display: none;
+    display: none; /* Hide scrollbar */
   }
   
   /* Game Item */
@@ -152,12 +159,25 @@ body {
     height: 100%;
     object-fit: cover; /* Scale to fill, maintain aspect ratio, crop overflow */
     border-radius: 5px;
+    transition: transform 0.3s;
   }
   
   .game-item:hover img,
   .game-item.focused img {
     transform: scale(1.05);
-    transition: transform 0.3s;
+  }
+  
+  .game-item:hover,
+  .game-item.focused {
+    position: relative;
+    z-index: 2;
+  }
+  
+  /* Prevent layout shift when scaling */
+  .game-item:hover,
+  .game-item.focused {
+    transform: scale(1.05);
+    transform-origin: center center;
   }
   
   /* Title Overlay */
@@ -175,8 +195,29 @@ body {
   }
   
   .game-item:hover .game-title-overlay,
-  .game-item.focused .game-title-overlay {
+  .game-item.focused .game-title-overlay,
+  .view-all-card .game-title-overlay {
     opacity: 1;
+  }
+  
+  /* View All Card Specific Styles */
+  .view-all-card .game-title-overlay.view-all-overlay {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    background-color: rgba(20, 20, 20, 0.8);
+    font-size: 1.2em;
+    padding: 10px;
+  }
+  
+  .view-all-card img.blurred-image {
+    filter: blur(5px);
+    transform: scale(1.1);
+  }
+  
+  /* Enhanced focus effect */
+  .game-item.focused {
+    border: 3px solid #e50914; /* Netflix red */
   }
   
   /* Games Grid (for full library view) */
@@ -199,6 +240,9 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.9);
     z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
   .modal.hidden {
@@ -209,7 +253,6 @@ body {
     position: relative;
     width: 90%;
     max-width: 1000px;
-    margin: 50px auto;
     background-color: transparent;
   }
   
@@ -298,13 +341,41 @@ body {
   }
   
   @keyframes fadeInOut {
-    0% { opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   
   /* Hidden class */
   .hidden {
     display: none;
+  }
+  
+  /* Blurred image for View All cards */
+  .blurred-image {
+    filter: blur(5px);
+    transform: scale(1.1);
+    transition: transform 0.3s;
+  }
+  
+  /* Hide scrollbars while allowing scroll */
+  body,
+  .game-carousel,
+  #mainContent {
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  body::-webkit-scrollbar,
+  .game-carousel::-webkit-scrollbar,
+  #mainContent::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }

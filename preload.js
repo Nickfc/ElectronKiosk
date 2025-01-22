@@ -50,6 +50,11 @@ try {
       dirname: (p) => path.dirname(p)
     });
   
+    // Listen for 'game-ended' event from main process and dispatch a custom event
+    ipcRenderer.on('game-ended', () => {
+      window.dispatchEvent(new Event('game-ended'));
+    });
+  
     console.log('preload.js successfully loaded');
   } catch (error) {
     console.error('Error in preload.js:', error);

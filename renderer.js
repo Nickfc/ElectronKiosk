@@ -28,6 +28,8 @@ window.addEventListener('DOMContentLoaded', () => {
     let focusedRowIndex = 0;
     let focusedColumnIndex = 0;
     let currentView = 'frontPage'; // 'frontPage' or 'library'
+    let isGameRunning = false; // Flag to control input when a game is running
+    let focusedMenuIndex = 0; // For side menu navigation
 
     // Variable to control whether to show games without images
     const showGamesWithoutImages = false;
@@ -63,11 +65,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
       consoles.forEach((console, consoleIndex) => {
         let games;
+        let totalGamesCount = 0;
         try {
           games = window.api.getGamesForConsole(console.file);
+
+          // Get the total number of games before any filtering
+          totalGamesCount = games.length;
+
           if (!showGamesWithoutImages) {
             games = games.filter((game) => game.CoverImage);
           }
+          // Now games may be fewer after filtering
+
           // Shuffle and get up to 20 games
           games = shuffleArray(games).slice(0, 20);
         } catch (error) {
@@ -75,8 +84,31 @@ window.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        if (games.length === 0) {
-          return;
+        // Even if we have no games with images, we might still want to show 'View All' cards
+        if (totalGamesCount === 0) {
+          return; // Skip consoles with no games at all
+        }
+
+        // Get a random game cover image
+        let randomCoverImage = null;
+        if (games.length > 0) {
+          const randomGame = games[Math.floor(Math.random() * games.length)];
+          if (randomGame && randomGame.CoverImage) {
+            randomCoverImage = randomGame.CoverImage;
+          }
+        }
+
+        // If we don't have a randomCoverImage due to filtering, get one from unfiltered games
+        if (!randomCoverImage) {
+          try {
+            const allGamesWithImages = window.api.getGamesForConsole(console.file).filter((game) => game.CoverImage);
+            if (allGamesWithImages.length > 0) {
+              const randomGame = allGamesWithImages[Math.floor(Math.random() * allGamesWithImages.length)];
+              randomCoverImage = randomGame.CoverImage;
+            }
+          } catch (error) {
+            console.error(`Failed to retrieve cover image for ${console.console}`);
+          }
         }
 
         // Console Row
@@ -105,13 +137,27 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const consoleGames = []; // Array to store game items in this console row
 
+        // Create first special card
+        const firstCard = createViewAllCard(console, randomCoverImage, totalGamesCount);
+        firstCard.dataset.rowIndex = consoleIndex;
+        firstCard.dataset.columnIndex = 0;
+        consoleGames.push(firstCard);
+        gameCarousel.appendChild(firstCard);
+
         games.forEach((game, gameIndex) => {
           const gameItem = createGameItem(game);
           gameItem.dataset.rowIndex = consoleIndex;
-          gameItem.dataset.columnIndex = gameIndex;
+          gameItem.dataset.columnIndex = gameIndex + 1; // Adjust index due to first card
           consoleGames.push(gameItem);
           gameCarousel.appendChild(gameItem);
         });
+
+        // Create last special card
+        const lastCard = createViewAllCard(console, randomCoverImage, totalGamesCount);
+        lastCard.dataset.rowIndex = consoleIndex;
+        lastCard.dataset.columnIndex = consoleGames.length;
+        consoleGames.push(lastCard);
+        gameCarousel.appendChild(lastCard);
 
         // Append to console row
         consoleRow.appendChild(consoleHeader);
@@ -165,6 +211,43 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Store references for navigation
       div.gameData = { game };
+
+      return div;
+    }
+
+    // Function to create the 'View All' card
+    function createViewAllCard(console, coverImage, totalGamesCount) {
+      const div = document.createElement('div');
+      div.classList.add('game-item', 'view-all-card'); // Added 'view-all-card' class
+      div.dataset.consoleFile = console.file; // Custom property
+
+      const img = document.createElement('img');
+      if (coverImage) {
+        if (coverImage.startsWith('http://') || coverImage.startsWith('https://')) {
+          img.src = coverImage;
+        } else {
+          const coverPath = window.path.join(window.api.appDir, coverImage);
+          img.src = 'file://' + coverPath;
+        }
+      } else {
+        img.src = ''; // Placeholder image if needed
+      }
+
+      // Apply blur effect to image
+      img.classList.add('blurred-image');
+
+      // Title Overlay
+      const titleOverlay = document.createElement('div');
+      titleOverlay.classList.add('game-title-overlay', 'view-all-overlay'); // Added 'view-all-overlay' class
+      titleOverlay.textContent = `View all ${totalGamesCount} games`;
+
+      div.appendChild(img);
+      div.appendChild(titleOverlay);
+
+      // Click event to load full console library
+      div.addEventListener('click', () => {
+        loadFullConsoleLibrary(console);
+      });
 
       return div;
     }
@@ -255,6 +338,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Event listener for keydown events
     let keyDebounce = false;
     document.addEventListener('keydown', (event) => {
+      if (isGameRunning) return; // Prevent input when game is running
       if (keyDebounce) return;
       keyDebounce = true;
       setTimeout(() => {
@@ -328,20 +412,72 @@ window.addEventListener('DOMContentLoaded', () => {
     let gamepadIndex = null;
     let gamepadDebounce = false;
     function gamepadLoop() {
+      if (isGameRunning) {
+        requestAnimationFrame(gamepadLoop);
+        return; // Prevent input when game is running
+      }
+
       const gamepads = navigator.getGamepads();
       const gamepad = gamepads[gamepadIndex] || gamepads[0];
 
       if (gamepad) {
         // D-pad navigation or left stick
-        const up = gamepad.buttons[12].pressed || gamepad.axes[1] < -0.5;
-        const down = gamepad.buttons[13].pressed || gamepad.axes[1] > 0.5;
-        const left = gamepad.buttons[14].pressed || gamepad.axes[0] < -0.5;
-        const right = gamepad.buttons[15].pressed || gamepad.axes[0] > 0.5;
-        const select = gamepad.buttons[0].pressed; // 'A' button
-        const back = gamepad.buttons[1].pressed; // 'B' button
+        const up = gamepad.buttons[12]?.pressed || gamepad.axes[1] < -0.5;
+        const down = gamepad.buttons[13]?.pressed || gamepad.axes[1] > 0.5;
+        const left = gamepad.buttons[14]?.pressed || gamepad.axes[0] < -0.5;
+        const right = gamepad.buttons[15]?.pressed || gamepad.axes[0] > 0.5;
+        const select = gamepad.buttons[0]?.pressed; // 'A' button
+        const back = gamepad.buttons[1]?.pressed; // 'B' button
+        const startButton = gamepad.buttons[9]?.pressed; // 'Start' button
+        const selectButton = gamepad.buttons[8]?.pressed; // 'Select' button
 
         if (!gamepadDebounce) {
-          if (gameModal.classList.contains('hidden')) {
+          if (startButton || selectButton) {
+            if (sideMenu.classList.contains('open')) {
+              closeSideMenu();
+            } else {
+              openSideMenu();
+            }
+            gamepadDebounce = true;
+            setTimeout(() => {
+              gamepadDebounce = false;
+            }, 200); // Debounce time for gamepad
+          } else if (sideMenu.classList.contains('open')) {
+            // Side menu is open
+            if (up) {
+              focusedMenuIndex = Math.max(focusedMenuIndex - 1, 0);
+              focusMenuItem(consoleList.children[focusedMenuIndex]);
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            } else if (down) {
+              focusedMenuIndex = Math.min(focusedMenuIndex + 1, consoleList.children.length - 1);
+              focusMenuItem(consoleList.children[focusedMenuIndex]);
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            } else if (select) {
+              // Trigger click on focused menu item
+              const focusedItem = consoleList.children[focusedMenuIndex];
+              if (focusedItem) {
+                focusedItem.click();
+              }
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            } else if (back) {
+              // Close side menu
+              closeSideMenu();
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            }
+          } else if (gameModal.classList.contains('hidden')) {
+            // Main content navigation
             let nextItem = null;
             if (up) {
               focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
@@ -375,6 +511,10 @@ window.addEventListener('DOMContentLoaded', () => {
               if (focusedItem) {
                 focusedItem.click();
               }
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
             } else if (back) {
               // Do nothing for now
             }
@@ -384,7 +524,7 @@ window.addEventListener('DOMContentLoaded', () => {
               gamepadDebounce = true;
               setTimeout(() => {
                 gamepadDebounce = false;
-              }, 200); // Debounce time for gamepad
+              }, 200);
             }
           } else {
             // Modal is open
@@ -418,6 +558,21 @@ window.addEventListener('DOMContentLoaded', () => {
         gamepadIndex = null;
       }
     });
+
+    // Function to focus on a menu item
+    function focusMenuItem(item) {
+      // Remove focus class from previous item
+      const focusedElements = document.querySelectorAll('#consoleList li.focused');
+      focusedElements.forEach((el) => el.classList.remove('focused'));
+
+      item.classList.add('focused');
+
+      // Scroll into view if needed
+      item.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
 
     // Function to open game modal and display details
     function openGameModal(game) {
@@ -458,6 +613,8 @@ window.addEventListener('DOMContentLoaded', () => {
         const romPath = selectedGame.RomPaths[0]; // Use the first ROM path
         try {
           window.api.launchGame(corePath, romPath);
+          isGameRunning = true; // Set flag when game starts
+          closeGameModal();
         } catch (error) {
           displayError('Failed to launch the game.');
         }
@@ -479,11 +636,19 @@ window.addEventListener('DOMContentLoaded', () => {
     function openSideMenu() {
       sideMenu.classList.add('open');
       menuOverlay.classList.remove('hidden');
+      // Focus first menu item
+      focusedMenuIndex = 0;
+      if (consoleList.children.length > 0) {
+        focusMenuItem(consoleList.children[focusedMenuIndex]);
+      }
     }
 
     function closeSideMenu() {
       sideMenu.classList.remove('open');
       menuOverlay.classList.add('hidden');
+      // Remove focus from menu items
+      const focusedElements = document.querySelectorAll('#consoleList li.focused');
+      focusedElements.forEach((el) => el.classList.remove('focused'));
     }
 
     // Event listener for 'Home' button
@@ -504,4 +669,9 @@ window.addEventListener('DOMContentLoaded', () => {
     function shuffleArray(array) {
       return array.sort(() => Math.random() - 0.5);
     }
-  });
+
+    // Listen for 'game-ended' event
+    window.addEventListener('game-ended', () => {
+      isGameRunning = false; // Reset flag when game ends
+    });
+});
