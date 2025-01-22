@@ -34,8 +34,8 @@ ipcMain.on('launch-game', (event, args) => {
   corePath = path.resolve(corePath);
   romPath = path.resolve(romPath);
 
-// Path to the RetroArch executable
-const retroarchPath = 'C:/RetroArch/win64/retroarch.exe'; // Updated path
+  // Path to the RetroArch executable
+  const retroarchPath = 'C:/RetroArch/win64/retroarch.exe'; // Updated path
 
   const commandArgs = [
     '-L',
@@ -46,6 +46,7 @@ const retroarchPath = 'C:/RetroArch/win64/retroarch.exe'; // Updated path
   execFile(retroarchPath, commandArgs, (error, stdout, stderr) => {
     if (error) {
       console.error(`Error launching game: ${error}`);
+      event.sender.send('launch-error', 'Failed to launch the game.');
       return;
     }
     console.log(`Game launched successfully.`);

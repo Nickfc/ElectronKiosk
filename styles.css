@@ -2,94 +2,113 @@
 
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #1e1e1e; /* Dark background */
     color: #f0f0f0; /* Light text color */
   }
-  
+
   #container {
     display: flex;
+    flex-direction: column;
     height: 100vh;
   }
-  
+
+  @media (min-width: 800px) {
+    #container {
+      flex-direction: row;
+    }
+  }
+
   #sidebar {
-    width: 300px;
+    width: 100%;
     background-color: #252526; /* Darker sidebar */
     padding: 10px;
     overflow-y: auto;
     border-right: 1px solid #333;
   }
-  
+
+  @media (min-width: 800px) {
+    #sidebar {
+      width: 300px;
+    }
+  }
+
   #sidebar h2 {
     margin-top: 20px;
     color: #f0f0f0;
   }
-  
-  #consoleSelect {
+
+  #consoleSelect,
+  #searchInput,
+  #genreFilter,
+  #yearFilter,
+  #developerFilter {
     width: 100%;
     padding: 5px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     background-color: #3c3c3c;
     color: #f0f0f0;
     border: 1px solid #555;
   }
-  
-  #searchInput {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 20px;
-    background-color: #3c3c3c;
-    color: #f0f0f0;
-    border: 1px solid #555;
-  }
-  
+
   #gameList {
     list-style-type: none;
     padding: 0;
+    margin: 0;
+    outline: none;
   }
-  
+
   #gameList li {
-    padding: 5px;
+    padding: 10px;
     cursor: pointer;
+    transition: background-color 0.2s;
   }
-  
+
   #gameList li:hover {
     background-color: #3c3c3c;
   }
-  
+
   #gameList li.selected {
     background-color: #007acc;
   }
-  
+
   #content {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
     background-color: #1e1e1e;
   }
-  
+
   #gameDetails {
     max-width: 800px;
     margin: 0 auto;
     text-align: center;
   }
-  
+
   #gameTitle {
     margin-bottom: 20px;
     color: #f0f0f0;
+    font-size: 2em;
   }
-  
+
   #gameCover {
     max-width: 100%;
     height: auto;
+    border-radius: 8px;
+    transition: transform 0.3s;
   }
-  
+
+  #gameCover:hover {
+    transform: scale(1.05);
+  }
+
   #gameDescription {
     margin: 20px 0;
     text-align: left;
     color: #d0d0d0;
+    line-height: 1.6;
   }
-  
+
   #launchButton {
     padding: 10px 20px;
     font-size: 16px;
@@ -98,9 +117,36 @@ body {
     color: #ffffff;
     border: none;
     border-radius: 4px;
+    transition: background-color 0.3s;
   }
-  
+
+  #launchButton:hover:not(:disabled) {
+    background-color: #005f99;
+  }
+
   #launchButton:disabled {
     background-color: #555;
     cursor: not-allowed;
+  }
+
+  #errorDisplay {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: #ff4c4c;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    animation: fadeInOut 5s forwards;
+  }
+
+  #errorDisplay.hidden {
+    display: none;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
   }

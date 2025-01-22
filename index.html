@@ -17,7 +17,16 @@
 
       <h2>Filters</h2>
       <input type="text" id="searchInput" placeholder="Search games...">
-      <ul id="gameList"></ul>
+      <select id="genreFilter">
+        <option value="">All Genres</option>
+      </select>
+      <select id="yearFilter">
+        <option value="">All Years</option>
+      </select>
+      <select id="developerFilter">
+        <option value="">All Developers</option>
+      </select>
+      <ul id="gameList" tabindex="0"></ul>
     </div>
 
     <!-- Content -->
@@ -30,6 +39,7 @@
       </div>
     </div>
   </div>
+  <div id="errorDisplay" class="hidden"></div>
   <script src="renderer.js"></script>
 </body>
 </html>
