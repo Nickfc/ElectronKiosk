@@ -40,7 +40,8 @@ try {
       },
       launchGame: (corePath, romPath) => {
         ipcRenderer.send('launch-game', { corePath, romPath });
-      }
+      },
+      appDir: __dirname // Expose the application directory
     });
   
     // Expose path module functions as needed
