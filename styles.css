@@ -2,39 +2,69 @@
 
 body {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Press Start 2P', sans-serif;
+    /* The font-family will be dynamically updated */
     background-color: #000; /* Black background */
     color: #fff; /* White text color */
-  }
-  
-  /* Header */
-  #header {
+}
+
+/* Background Overlay */
+#backgroundOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.5s; /* Adjusted transition duration */
+    z-index: 1;
+}
+
+#backgroundOverlay:not(.hidden) {
+    opacity: 0.5;
+}
+
+/* Header */
+#header {
     position: sticky;
     top: 0;
     z-index: 1000;
     display: flex;
     align-items: center;
-    padding: 20px;
+    padding: 10px 20px;
     background-color: #141414; /* Netflix-like dark background */
-  }
-  
-  #header h1 {
+}
+
+#header h1 {
     flex: 1;
     margin: 0;
-  }
-  
-  #openMenuButton,
-  #homeButton {
+    font-size: 1.5em;
+}
+
+#openMenuButton,
+#homeButton,
+#settingsButton {
     background: none;
     border: none;
     color: #fff;
     font-size: 20px;
     cursor: pointer;
     margin-left: 10px;
-  }
-  
-  /* Side Menu */
-  .side-menu {
+}
+
+#searchBar {
+    margin-left: 20px;
+    padding: 5px 10px;
+    font-size: 16px;
+    flex: 2;
+    max-width: 400px;
+}
+
+/* Side Menu */
+.side-menu {
     position: fixed;
     top: 0;
     left: -250px;
@@ -44,46 +74,64 @@ body {
     overflow-y: auto;
     transition: left 0.3s;
     z-index: 1000;
-  }
-  
-  .side-menu.open {
+}
+
+.side-menu.open {
     left: 0;
-  }
-  
-  .side-menu-header {
+}
+
+.side-menu-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 15px;
-  }
-  
-  .side-menu-header h2 {
+}
+
+.side-menu-header h2 {
     margin: 0;
-  }
-  
-  #closeMenuButton {
+}
+
+#closeMenuButton {
     cursor: pointer;
     font-size: 24px;
-  }
-  
-  #consoleList {
+}
+
+#consoleList {
     list-style: none;
     padding: 0;
     margin: 0;
-  }
-  
-  #consoleList li {
+}
+
+#consoleList li {
     padding: 15px;
     cursor: pointer;
-  }
-  
-  #consoleList li:hover,
-  #consoleList li.focused {
+}
+
+#consoleList li:hover,
+#consoleList li.focused,
+#consoleList li:focus {
     background-color: #333;
-  }
-  
-  /* Menu Overlay */
-  .menu-overlay {
+    outline: none;
+}
+
+/* Exit Button in Side Menu */
+#exitAppButton {
+    width: 100%;
+    padding: 15px;
+    background: none;
+    border: none;
+    color: #e50914; /* Netflix red */
+    font-size: 16px;
+    cursor: pointer;
+    text-align: left;
+}
+
+#exitAppButton:hover {
+    background-color: #333;
+}
+
+/* Menu Overlay */
+.menu-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -91,97 +139,88 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 900;
-  }
-  
-  .menu-overlay.hidden {
+}
+
+.menu-overlay.hidden {
     display: none;
-  }
-  
-  /* Main Content */
-  #mainContent {
+}
+
+/* Main Content */
+#mainContent {
     padding: 20px;
     overflow-y: auto;
-  }
-  
-  #mainContent::-webkit-scrollbar {
+    position: relative; /* Ensure it appears above background overlay */
+    z-index: 1;
+}
+
+#mainContent::-webkit-scrollbar {
     display: none; /* Hide scrollbar */
-  }
-  
-  /* Console Row */
-  .console-row {
+}
+
+/* Console Row */
+.console-row {
     margin-bottom: 40px;
-  }
-  
-  .console-header {
+}
+
+.console-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 1.5em;
     margin-bottom: 10px;
-  }
-  
-  .view-all-button {
+}
+
+.view-all-button {
     background: none;
     border: none;
     color: #e50914; /* Netflix red */
     cursor: pointer;
     font-size: 1em;
-  }
-  
-  .view-all-button:hover {
+}
+
+.view-all-button:hover {
     text-decoration: underline;
-  }
-  
-  .game-carousel {
+}
+
+.game-carousel {
     display: flex;
     overflow-x: auto;
     padding-bottom: 10px;
-  }
-  
-  .game-carousel::-webkit-scrollbar {
+}
+
+.game-carousel::-webkit-scrollbar {
     display: none; /* Hide scrollbar */
-  }
-  
-  /* Game Item */
-  .game-item {
-    flex: 0 0 auto;
+}
+
+/* Game Item */
+.game-item {
     position: relative;
+    flex: 0 0 auto;
+    width: 200px; /* Fixed width */
+    height: 300px; /* Fixed height maintaining 2:3 aspect ratio */
     margin-right: 10px;
-    width: 200px; /* Set exact width */
-    height: 300px; /* Set exact height */
+    margin-bottom: 10px;
+    overflow: hidden;
     cursor: pointer;
-    overflow: hidden; /* Ensure child elements don't overflow */
     outline: none;
-  }
-  
-  .game-item img {
+    transition: all 0.3s ease;
+}
+
+.game-item img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Scale to fill, maintain aspect ratio, crop overflow */
+    object-fit: cover;
     border-radius: 5px;
     transition: transform 0.3s;
-  }
-  
-  .game-item:hover img,
-  .game-item.focused img {
+}
+
+.game-item:hover img,
+.game-item.focused img {
     transform: scale(1.05);
-  }
-  
-  .game-item:hover,
-  .game-item.focused {
-    position: relative;
-    z-index: 2;
-  }
-  
-  /* Prevent layout shift when scaling */
-  .game-item:hover,
-  .game-item.focused {
-    transform: scale(1.05);
-    transform-origin: center center;
-  }
-  
-  /* Title Overlay */
-  .game-title-overlay {
+}
+
+/* Title Overlay */
+.game-title-overlay {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -192,48 +231,44 @@ body {
     padding: 5px;
     opacity: 0;
     transition: opacity 0.3s;
-  }
-  
-  .game-item:hover .game-title-overlay,
-  .game-item.focused .game-title-overlay,
-  .view-all-card .game-title-overlay {
+}
+
+.game-item:hover .game-title-overlay,
+.game-item.focused .game-title-overlay,
+.view-all-card .game-title-overlay {
     opacity: 1;
-  }
-  
-  /* View All Card Specific Styles */
-  .view-all-card .game-title-overlay.view-all-overlay {
+}
+
+/* View All Card Specific Styles */
+.view-all-card .game-title-overlay.view-all-overlay {
     top: 50%;
     bottom: auto;
     transform: translateY(-50%);
     background-color: rgba(20, 20, 20, 0.8);
-    font-size: 1.2em;
+    font-size: 1em;
     padding: 10px;
-  }
-  
-  .view-all-card img.blurred-image {
+}
+
+.view-all-card img.blurred-image {
     filter: blur(5px);
     transform: scale(1.1);
-  }
-  
-  /* Enhanced focus effect */
-  .game-item.focused {
+}
+
+/* Enhanced focus effect */
+.game-item.focused {
     border: 3px solid #e50914; /* Netflix red */
-  }
-  
-  /* Games Grid (for full library view) */
-  .games-grid {
+}
+
+/* Games Grid (for full library view) */
+.games-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     position: relative; /* For positioning the alphabet nav */
-  }
-  
-  .games-grid .game-item {
-    margin: 10px;
-  }
-  
-  /* Alphabet Navigation Bar */
-  #alphabetNav {
+}
+
+/* Alphabet Navigation Bar */
+#alphabetNav {
     position: fixed;
     top: 50%;
     right: 0;
@@ -242,34 +277,36 @@ body {
     border-radius: 10px 0 0 10px;
     padding: 10px;
     z-index: 1500;
-  }
-  
-  #alphabetNav ul {
+}
+
+#alphabetNav ul {
     list-style: none;
     margin: 0;
     padding: 0;
-  }
-  
-  #alphabetNav ul li {
+}
+
+#alphabetNav ul li {
     padding: 5px 10px;
     text-align: center;
-    cursor: pointer; /* Added to indicate clickable items */
+    cursor: pointer;
     color: #fff;
     font-size: 1.2em;
-  }
-  
-  #alphabetNav ul li.focused,
-  #alphabetNav ul li:hover {
+}
+
+#alphabetNav ul li.focused,
+#alphabetNav ul li:hover,
+#alphabetNav ul li:focus {
     background-color: #e50914; /* Netflix red */
     color: #fff;
-  }
-  
-  #alphabetNav.hidden {
-    display: none;
-  }
+    outline: none;
+}
 
-  /* Modal styles */
-  .modal {
+#alphabetNav.hidden {
+    display: none;
+}
+
+/* Modal styles */
+.modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -280,20 +317,20 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  
-  .modal.hidden {
+}
+
+.modal.hidden {
     display: none;
-  }
-  
-  .modal-content {
+}
+
+.modal-content {
     position: relative;
     width: 90%;
-    max-width: 1000px;
+    max-width: 800px;
     background-color: transparent;
-  }
-  
-  .modal-background {
+}
+
+.modal-background {
     position: absolute;
     top: 0;
     left: 0;
@@ -303,65 +340,74 @@ body {
     background-position: center;
     filter: blur(20px);
     z-index: -1;
-  }
-  
-  .modal-body {
+}
+
+.modal-body {
     position: relative;
     padding: 20px;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.85);
     text-align: center;
     border-radius: 10px;
-  }
-  
-  .modal-body h2 {
+}
+
+.modal-body h2 {
     margin-top: 0;
     color: #fff;
     font-size: 2em;
-  }
-  
-  .modal-body img {
+}
+
+.modal-body img {
     max-width: 100%;
     height: auto;
     margin: 20px 0;
     border-radius: 10px;
-  }
-  
-  .modal-body p {
+}
+
+.modal-body p {
     color: #ddd;
     line-height: 1.6;
     font-size: 1.1em;
-  }
-  
-  .modal-body button {
-    padding: 15px 30px;
-    font-size: 18px;
-    margin: 10px;
+}
+
+.modal-body button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 5px;
     cursor: pointer;
     border-radius: 5px;
-  }
-  
-  #modalLaunchButton {
+    border: none;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#modalLaunchButton {
     background-color: #e50914; /* Netflix red */
     color: #fff;
-    border: none;
-  }
-  
-  #modalLaunchButton:hover {
+}
+
+#modalLaunchButton:hover {
     background-color: #f40612;
-  }
-  
-  #modalCloseButton {
+}
+
+#modalPrevButton,
+#modalNextButton,
+#modalCloseButton {
     background-color: #333;
     color: #fff;
-    border: none;
-  }
-  
-  #modalCloseButton:hover {
+}
+
+#modalPrevButton:hover,
+#modalNextButton:hover,
+#modalCloseButton:hover {
     background-color: #444;
-  }
-  
-  /* Error Display */
-  #errorDisplay {
+}
+
+/* Error Display */
+#errorDisplay {
     position: fixed;
     bottom: 20px;
     left: 20px;
@@ -371,48 +417,139 @@ body {
     border-radius: 4px;
     animation: fadeInOut 5s forwards;
     z-index: 2000;
-  }
-  
-  #errorDisplay.hidden {
+}
+
+#errorDisplay.hidden {
     display: none;
-  }
-  
-  @keyframes fadeInOut {
+}
+
+@keyframes fadeInOut {
     0% {
-      opacity: 0;
+        opacity: 0;
     }
     10% {
-      opacity: 1;
+        opacity: 1;
     }
     90% {
-      opacity: 1;
+        opacity: 1;
     }
     100% {
-      opacity: 0;
+        opacity: 0;
     }
-  }
-  
-  /* Hidden class */
-  .hidden {
+}
+
+/* Hidden class */
+.hidden {
     display: none;
-  }
-  
-  /* Blurred image for View All cards */
-  .blurred-image {
+}
+
+/* Blurred image for View All cards */
+.blurred-image {
     filter: blur(5px);
     transform: scale(1.1);
     transition: transform 0.3s;
-  }
-  
-  /* Hide scrollbars while allowing scroll */
-  body,
-  .game-carousel,
-  #mainContent {
+}
+
+/* Hide scrollbars while allowing scroll */
+body,
+.game-carousel,
+#mainContent {
     scrollbar-width: none; /* Firefox */
-  }
-  
-  body::-webkit-scrollbar,
-  .game-carousel::-webkit-scrollbar,
-  #mainContent::-webkit-scrollbar {
+}
+
+body::-webkit-scrollbar,
+.game-carousel::-webkit-scrollbar,
+#mainContent::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
-  }
+}
+
+/* Loading Spinner */
+#loadingSpinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#loadingSpinner.hidden {
+    display: none;
+}
+
+.spinner {
+    border: 16px solid #f3f3f3;
+    border-top: 16px solid #e50914;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Settings Modal */
+#settingsModal .modal-body {
+    text-align: left;
+}
+
+#settingsModal label {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+    color: #fff;
+}
+
+#settingsModal input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.settings-item {
+    margin: 10px 0;
+}
+
+.settings-item label {
+    margin-right: 10px;
+}
+
+#fontSelect,
+#fontSizeSelect {
+    padding: 5px;
+    font-size: 1em;
+}
+
+#settingsCloseButton {
+    background-color: #e50914;
+    color: #fff;
+    margin-top: 20px;
+}
+
+/* Responsive Layout */
+@media (max-width: 1200px) {
+    .game-item {
+        width: 180px;
+        height: 270px; /* Maintain 2:3 aspect ratio */
+    }
+}
+
+@media (max-width: 900px) {
+    .game-item {
+        width: 150px;
+        height: 225px; /* Maintain 2:3 aspect ratio */
+    }
+}
+
+@media (max-width: 600px) {
+    .game-item {
+        width: 120px;
+        height: 180px; /* Maintain 2:3 aspect ratio */
+    }
+}
