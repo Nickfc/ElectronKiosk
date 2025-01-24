@@ -2,27 +2,42 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Retro Game Launcher</title>
+  <title>The Legacy</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Raleway&display=swap" rel="stylesheet">
+  <!-- Notyf CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 </head>
 <body>
+  <!-- Loading Spinner -->
+  <div id="loadingSpinner" class="hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Background Overlay -->
+  <div id="backgroundOverlay" class="hidden"></div>
+
   <!-- Side Menu -->
-  <div id="sideMenu" class="side-menu">
+  <div id="sideMenu" class="side-menu" role="navigation" aria-label="Main Menu">
     <div class="side-menu-header">
       <h2>Consoles</h2>
-      <span id="closeMenuButton">&times;</span>
+      <span id="closeMenuButton" tabindex="0" aria-label="Close Menu">&times;</span>
     </div>
     <ul id="consoleList">
       <!-- Console list items will be populated here -->
     </ul>
+    <button id="exitAppButton">Exit</button>
   </div>
   <div id="menuOverlay" class="menu-overlay hidden"></div>
 
   <!-- Header -->
   <div id="header">
-    <h1>Retro Game Launcher</h1>
-    <button id="openMenuButton">&#9776;</button>
+    <button id="openMenuButton" aria-label="Open Menu">&#9776;</button>
+    <h1>The Legacy</h1>
+    <input type="text" id="searchBar" class="hidden" placeholder="Search for games...">
     <button id="homeButton">Home</button>
+    <button id="settingsButton" aria-label="Settings">&#9881;</button>
   </div>
 
   <!-- Main Content -->
@@ -38,20 +53,58 @@
   </div>
 
   <!-- Game Details Modal -->
-  <div id="gameModal" class="modal hidden">
+  <div id="gameModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalGameTitle">
     <div class="modal-content">
       <div class="modal-background" id="modalBackground"></div>
       <div class="modal-body">
         <h2 id="modalGameTitle"></h2>
         <img id="modalGameCover" src="" alt="Game Cover">
         <p id="modalGameDescription"></p>
-        <button id="modalLaunchButton">Launch Game</button>
-        <button id="modalCloseButton">Close</button>
+        <div class="modal-buttons">
+          <button id="modalPrevButton" aria-label="Previous Game">&#10094;</button>
+          <button id="modalLaunchButton">Launch Game</button>
+          <button id="modalNextButton" aria-label="Next Game">&#10095;</button>
+        </div>
+        <button id="modalCloseButton" aria-label="Close">&#10006;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h2 id="settingsTitle">Settings</h2>
+        <label>
+          <input type="checkbox" id="showGamesWithoutImagesCheckbox">
+          Show games without images
+        </label>
+        <!-- Font Selection -->
+        <div class="settings-item">
+          <label for="fontSelect">Select Font:</label>
+          <select id="fontSelect">
+            <option value="Press Start 2P">Press Start 2P</option>
+            <option value="VT323">VT323</option>
+            <option value="Raleway">Raleway</option>
+          </select>
+        </div>
+        <!-- Font Size Selection -->
+        <div class="settings-item">
+          <label for="fontSizeSelect">Font Size:</label>
+          <select id="fontSizeSelect">
+            <option value="small">Small</option>
+            <option value="normal" selected>Normal</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+        <button id="settingsCloseButton">Close</button>
       </div>
     </div>
   </div>
 
   <div id="errorDisplay" class="hidden"></div>
+  <!-- Notyf JS -->
+  <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
