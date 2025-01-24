@@ -41,6 +41,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // Variable to control whether to show games without images
     const showGamesWithoutImages = false;
 
+    // Input method tracking
+    let lastInputMethod = 'keyboard'; // 'keyboard' or 'controller'
+
     // Fetch consoles and populate front page and side menu
     try {
       allConsoles = window.api.getConsoles();
@@ -292,17 +295,17 @@ window.addEventListener('DOMContentLoaded', () => {
         const gameItem = createGameItem(game);
         gameItem.dataset.rowIndex = Math.floor(index / itemsPerRow);
         gameItem.dataset.columnIndex = index % itemsPerRow;
-        currentRow.push(gameItem);
-        gamesGrid.appendChild(gameItem);
+        const rowIndex = parseInt(gameItem.dataset.rowIndex);
+        const columnIndex = parseInt(gameItem.dataset.columnIndex);
 
-        if ((index + 1) % itemsPerRow === 0) {
-          gameItemsGrid.push(currentRow);
-          currentRow = [];
+        // Ensure the gameItemsGrid has an array for this row
+        if (!gameItemsGrid[rowIndex]) {
+          gameItemsGrid[rowIndex] = [];
         }
+
+        gameItemsGrid[rowIndex][columnIndex] = gameItem;
+        gamesGrid.appendChild(gameItem);
       });
-      if (currentRow.length > 0) {
-        gameItemsGrid.push(currentRow);
-      }
 
       mainContent.appendChild(consoleHeader);
       mainContent.appendChild(gamesGrid);
@@ -361,11 +364,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
       item.classList.add('focused');
 
-      // Scroll into view
+      // Scroll into view if needed
       item.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'nearest',
+        inline: 'center',
       });
     }
 
@@ -421,6 +424,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Event listener for keydown events
     let keyDebounce = false;
     document.addEventListener('keydown', (event) => {
+      event.preventDefault(); // Prevent default browser behavior
       if (isGameRunning) return; // Prevent input when game is running
       if (keyDebounce) return;
       keyDebounce = true;
@@ -428,169 +432,246 @@ window.addEventListener('DOMContentLoaded', () => {
         keyDebounce = false;
       }, 100); // Adjust debounce time as needed
 
-      if (gameModal.classList.contains('hidden')) {
+      lastInputMethod = 'keyboard'; // Update the input method
+
+      if (gameModal.classList.contains('hidden') && !sideMenu.classList.contains('open')) {
         if (currentView === 'library') {
           if (isAlphabetNavActive) {
             // Alphabet navigation
-            switch (event.key) {
-              case 'ArrowUp':
-                focusAlphabetItem(alphabetFocusedIndex - 1);
-                break;
-              case 'ArrowDown':
-                focusAlphabetItem(alphabetFocusedIndex + 1);
-                break;
-              case 'Enter':
-                const selectedLetter = alphabet[alphabetFocusedIndex];
-                jumpToLetter(selectedLetter);
-                break;
-              case 'ArrowLeft':
-                isAlphabetNavActive = false;
-                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
-                break;
-              case 'Escape':
-              case 'Backspace':
-                isAlphabetNavActive = false;
-                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
-                break;
-              default:
-                break;
-            }
+            handleKeyboardAlphabetNavigation(event);
           } else {
             // Game items navigation
-            let nextItem = null;
-            switch (event.key) {
-              case 'ArrowLeft':
-                focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                break;
-              case 'ArrowRight':
-                focusedColumnIndex += 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                // Adjust if no item in that column
-                if (!nextItem) {
-                  focusedColumnIndex -= 1;
-                  // Move to alphabet nav
-                  isAlphabetNavActive = true;
-                  focusAlphabetItem(alphabetFocusedIndex);
-                }
-                break;
-              case 'ArrowUp':
-                focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
-                // Adjust column index if out of bounds
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                if (!nextItem) {
-                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                }
-                break;
-              case 'ArrowDown':
-                focusedRowIndex += 1;
-                // Adjust if no more rows
-                if (focusedRowIndex >= gameItemsGrid.length) {
-                  focusedRowIndex -= 1;
-                }
-                // Adjust column index if out of bounds
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                if (!nextItem) {
-                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                }
-                break;
-              case 'Enter':
-                const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                if (focusedItem) {
-                  focusedItem.click();
-                }
-                break;
-              case 'Backspace':
-              case 'Escape':
-                // Go back to front page
-                populateFrontPage(allConsoles);
-                break;
-              default:
-                break;
-            }
-
-            if (nextItem) {
-              focusGameItem(nextItem);
-            }
+            handleKeyboardGameItemNavigation(event);
           }
         } else {
           // Front page navigation or other views
-          let nextItem = null;
-          switch (event.key) {
-            case 'ArrowLeft':
-              focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              break;
-            case 'ArrowRight':
-              focusedColumnIndex += 1;
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (!nextItem) {
-                focusedColumnIndex -= 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              }
-              break;
-            case 'ArrowUp':
-              focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
-              // Adjust column index if out of bounds
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (!nextItem) {
-                focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              }
-              break;
-            case 'ArrowDown':
-              focusedRowIndex += 1;
-              if (focusedRowIndex >= gameItemsGrid.length) {
-                focusedRowIndex -= 1;
-              }
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (!nextItem) {
-                focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              }
-              break;
-            case 'Enter':
-              const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (focusedItem) {
-                focusedItem.click();
-              }
-              break;
-            default:
-              break;
-          }
-
-          if (nextItem) {
-            focusGameItem(nextItem);
-          }
+          handleKeyboardFrontPageNavigation(event);
         }
-      } else {
+      } else if (!gameModal.classList.contains('hidden')) {
         // Modal is open
-        switch (event.key) {
-          case 'Escape':
-          case 'Backspace':
-            closeGameModal();
-            break;
-          default:
-            break;
-        }
+        handleKeyboardModalNavigation(event);
+      } else if (sideMenu.classList.contains('open')) {
+        // Side menu is open
+        handleKeyboardSideMenuNavigation(event);
       }
     });
 
+    // Function to handle keyboard navigation in the alphabet nav
+    function handleKeyboardAlphabetNavigation(event) {
+      switch (event.key) {
+        case 'ArrowUp':
+          focusAlphabetItem(alphabetFocusedIndex - 1);
+          break;
+        case 'ArrowDown':
+          focusAlphabetItem(alphabetFocusedIndex + 1);
+          break;
+        case 'Enter':
+          const selectedLetter = alphabet[alphabetFocusedIndex];
+          jumpToLetter(selectedLetter);
+          break;
+        case 'ArrowLeft':
+          isAlphabetNavActive = false;
+          focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+          break;
+        case 'Escape':
+        case 'Backspace':
+          isAlphabetNavActive = false;
+          focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Function to handle keyboard navigation in game items
+    function handleKeyboardGameItemNavigation(event) {
+      let nextItem = null;
+      switch (event.key) {
+        case 'ArrowLeft':
+          focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'left');
+          break;
+        case 'ArrowRight':
+          focusedColumnIndex += 1;
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'right');
+          if (!nextItem) {
+            // Move to alphabet nav
+            isAlphabetNavActive = true;
+            focusAlphabetItem(alphabetFocusedIndex);
+            return;
+          }
+          break;
+        case 'ArrowUp':
+          focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'up');
+          break;
+        case 'ArrowDown':
+          focusedRowIndex += 1;
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'down');
+          if (!nextItem) {
+            // Stay on the current item if no valid next item
+            focusedRowIndex -= 1;
+            return;
+          }
+          break;
+        case 'Enter':
+          const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+          if (focusedItem) {
+            focusedItem.click();
+          }
+          break;
+        case 'Backspace':
+        case 'Escape':
+          // Go back to front page
+          populateFrontPage(allConsoles);
+          break;
+        default:
+          break;
+      }
+
+      if (nextItem) {
+        focusGameItem(nextItem);
+      }
+    }
+
+    // Function to get the next valid item with edge case handling
+    function getNextValidItem(rowIndex, columnIndex, direction) {
+      // Validate row index
+      if (rowIndex < 0) {
+        rowIndex = 0;
+      } else if (rowIndex >= gameItemsGrid.length) {
+        rowIndex = gameItemsGrid.length - 1;
+      }
+
+      // Validate column index
+      if (columnIndex < 0) {
+        columnIndex = 0;
+      }
+
+      let nextItem = getNextItem(rowIndex, columnIndex);
+
+      // Adjust column index if no item exists at the current position
+      if (!nextItem) {
+        const rowLength = gameItemsGrid[rowIndex]?.length || 0;
+        if (rowLength > 0) {
+          if (columnIndex >= rowLength) {
+            columnIndex = rowLength - 1;
+          } else if (columnIndex < 0) {
+            columnIndex = 0;
+          }
+          nextItem = getNextItem(rowIndex, columnIndex);
+        } else {
+          // Row is empty, try moving in the same direction
+          switch (direction) {
+            case 'up':
+              if (rowIndex > 0) {
+                return getNextValidItem(rowIndex - 1, focusedColumnIndex, 'up');
+              }
+              break;
+            case 'down':
+              if (rowIndex < gameItemsGrid.length - 1) {
+                return getNextValidItem(rowIndex + 1, focusedColumnIndex, 'down');
+              }
+              break;
+            default:
+              return null;
+          }
+        }
+      }
+
+      // Update focused indices
+      focusedRowIndex = rowIndex;
+      focusedColumnIndex = columnIndex;
+
+      return nextItem;
+    }
+
+    // Function to handle keyboard navigation on the front page
+    function handleKeyboardFrontPageNavigation(event) {
+      let nextItem = null;
+      switch (event.key) {
+        case 'ArrowLeft':
+          focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'left');
+          break;
+        case 'ArrowRight':
+          focusedColumnIndex += 1;
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'right');
+          if (!nextItem) {
+            // Stay on the current item
+            focusedColumnIndex -= 1;
+            return;
+          }
+          break;
+        case 'ArrowUp':
+          focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'up');
+          break;
+        case 'ArrowDown':
+          focusedRowIndex += 1;
+          nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'down');
+          if (!nextItem) {
+            // Stay on the current item
+            focusedRowIndex -= 1;
+            return;
+          }
+          break;
+        case 'Enter':
+          const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+          if (focusedItem) {
+            focusedItem.click();
+          }
+          break;
+        default:
+          break;
+      }
+
+      if (nextItem) {
+        focusGameItem(nextItem);
+      }
+    }
+
+    // Function to handle keyboard navigation in the modal
+    function handleKeyboardModalNavigation(event) {
+      switch (event.key) {
+        case 'Escape':
+        case 'Backspace':
+          closeGameModal();
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Function to handle keyboard navigation in the side menu
+    function handleKeyboardSideMenuNavigation(event) {
+      switch (event.key) {
+        case 'ArrowUp':
+          focusedMenuIndex = Math.max(focusedMenuIndex - 1, 0);
+          focusMenuItem(consoleList.children[focusedMenuIndex]);
+          break;
+        case 'ArrowDown':
+          focusedMenuIndex = Math.min(focusedMenuIndex + 1, consoleList.children.length - 1);
+          focusMenuItem(consoleList.children[focusedMenuIndex]);
+          break;
+        case 'Enter':
+          // Trigger click on focused menu item
+          const focusedItem = consoleList.children[focusedMenuIndex];
+          if (focusedItem) {
+            focusedItem.click();
+          }
+          break;
+        case 'Escape':
+        case 'Backspace':
+          closeSideMenu();
+          break;
+        default:
+          break;
+      }
+    }
     // Gamepad support
     let gamepadIndex = null;
-
-    // Variables to track previous button states for edge detection
-    let prevSelectPressed = false;
-    let prevBackPressed = false;
-    let prevStartButtonPressed = false;
-    let prevSelectButtonPressed = false;
-    let prevUpPressed = false;
-    let prevDownPressed = false;
-    let prevLeftPressed = false;
-    let prevRightPressed = false;
-
+    let gamepadDebounce = false;
     function gamepadLoop() {
       if (isGameRunning) {
         requestAnimationFrame(gamepadLoop);
@@ -602,173 +683,195 @@ window.addEventListener('DOMContentLoaded', () => {
 
       if (gamepad) {
         // D-pad navigation or left stick
-        const upPressed = gamepad.buttons[12]?.pressed || gamepad.axes[1] < -0.5;
-        const downPressed = gamepad.buttons[13]?.pressed || gamepad.axes[1] > 0.5;
-        const leftPressed = gamepad.buttons[14]?.pressed || gamepad.axes[0] < -0.5;
-        const rightPressed = gamepad.buttons[15]?.pressed || gamepad.axes[0] > 0.5;
-        const selectPressed = gamepad.buttons[0]?.pressed; // 'A' button
-        const backPressed = gamepad.buttons[1]?.pressed; // 'B' button
-        const startButtonPressed = gamepad.buttons[9]?.pressed; // 'Start' button
-        const selectButtonPressed = gamepad.buttons[8]?.pressed; // 'Select' button
+        const up = gamepad.buttons[12]?.pressed || gamepad.axes[1] < -0.5;
+        const down = gamepad.buttons[13]?.pressed || gamepad.axes[1] > 0.5;
+        const left = gamepad.buttons[14]?.pressed || gamepad.axes[0] < -0.5;
+        const right = gamepad.buttons[15]?.pressed || gamepad.axes[0] > 0.5;
+        const select = gamepad.buttons[0]?.pressed; // 'A' button
+        const back = gamepad.buttons[1]?.pressed; // 'B' button
+        const startButton = gamepad.buttons[9]?.pressed; // 'Start' button
+        const selectButton = gamepad.buttons[8]?.pressed; // 'Select' button
 
-        // Edge detection for button presses
-        const up = upPressed && !prevUpPressed;
-        const down = downPressed && !prevDownPressed;
-        const left = leftPressed && !prevLeftPressed;
-        const right = rightPressed && !prevRightPressed;
-        const select = selectPressed && !prevSelectPressed;
-        const back = backPressed && !prevBackPressed;
-        const startButton = startButtonPressed && !prevStartButtonPressed;
-        const selectButton = selectButtonPressed && !prevSelectButtonPressed;
+        if (!gamepadDebounce) {
+          lastInputMethod = 'controller'; // Update the input method
 
-        if (startButton || selectButton) {
-          if (sideMenu.classList.contains('open')) {
-            closeSideMenu();
-          } else {
-            openSideMenu();
-          }
-        } else if (sideMenu.classList.contains('open')) {
-          // Side menu is open
-          if (up) {
-            focusedMenuIndex = Math.max(focusedMenuIndex - 1, 0);
-            focusMenuItem(consoleList.children[focusedMenuIndex]);
-          } else if (down) {
-            focusedMenuIndex = Math.min(focusedMenuIndex + 1, consoleList.children.length - 1);
-            focusMenuItem(consoleList.children[focusedMenuIndex]);
-          } else if (select) {
-            // Trigger click on focused menu item
-            const focusedItem = consoleList.children[focusedMenuIndex];
-            if (focusedItem) {
-              focusedItem.click();
+          if (startButton || selectButton) {
+            if (sideMenu.classList.contains('open')) {
+              closeSideMenu();
+            } else {
+              openSideMenu();
             }
-          } else if (back) {
-            // Close side menu
-            closeSideMenu();
-          }
-        } else if (gameModal.classList.contains('hidden')) {
-          if (currentView === 'library') {
-            if (isAlphabetNavActive) {
-              // Alphabet navigation
-              if (up) {
-                focusAlphabetItem(alphabetFocusedIndex - 1);
-              } else if (down) {
-                focusAlphabetItem(alphabetFocusedIndex + 1);
-              } else if (select) {
-                const selectedLetter = alphabet[alphabetFocusedIndex];
-                jumpToLetter(selectedLetter);
-                isAlphabetNavActive = false;
-              } else if (left) {
-                isAlphabetNavActive = false;
-                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
-              } else if (back) {
-                isAlphabetNavActive = false;
-                focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+            gamepadDebounce = true;
+            setTimeout(() => {
+              gamepadDebounce = false;
+            }, 200); // Debounce time for gamepad
+          } else if (sideMenu.classList.contains('open')) {
+            // Side menu is open
+            if (up) {
+              focusedMenuIndex = Math.max(focusedMenuIndex - 1, 0);
+              focusMenuItem(consoleList.children[focusedMenuIndex]);
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            } else if (down) {
+              focusedMenuIndex = Math.min(focusedMenuIndex + 1, consoleList.children.length - 1);
+              focusMenuItem(consoleList.children[focusedMenuIndex]);
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            } else if (select) {
+              // Trigger click on focused menu item
+              const focusedItem = consoleList.children[focusedMenuIndex];
+              if (focusedItem) {
+                focusedItem.click();
+              }
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            } else if (back) {
+              // Close side menu
+              closeSideMenu();
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200);
+            }
+          } else if (gameModal.classList.contains('hidden')) {
+            if (currentView === 'library') {
+              if (isAlphabetNavActive) {
+                // Alphabet navigation
+                if (up) {
+                  focusAlphabetItem(alphabetFocusedIndex - 1);
+                } else if (down) {
+                  focusAlphabetItem(alphabetFocusedIndex + 1);
+                } else if (select) {
+                  const selectedLetter = alphabet[alphabetFocusedIndex];
+                  jumpToLetter(selectedLetter);
+                } else if (left) {
+                  isAlphabetNavActive = false;
+                  focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+                } else if (back) {
+                  isAlphabetNavActive = false;
+                  focusGameItem(getNextItem(focusedRowIndex, focusedColumnIndex));
+                }
+                gamepadDebounce = true;
+                setTimeout(() => {
+                  gamepadDebounce = false;
+                }, 200);
+              } else {
+                // Game items navigation
+                let nextItem = null;
+                if (up) {
+                  focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
+                  nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'up');
+                } else if (down) {
+                  focusedRowIndex += 1;
+                  nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'down');
+                  if (!nextItem) {
+                    focusedRowIndex -= 1;
+                  }
+                } else if (left) {
+                  focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
+                  nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'left');
+                } else if (right) {
+                  focusedColumnIndex += 1;
+                  nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'right');
+                  if (!nextItem) {
+                    // Move to alphabet nav
+                    isAlphabetNavActive = true;
+                    focusAlphabetItem(alphabetFocusedIndex);
+                    gamepadDebounce = true;
+                    setTimeout(() => {
+                      gamepadDebounce = false;
+                    }, 200);
+                    return;
+                  }
+                } else if (select) {
+                  const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                  if (focusedItem) {
+                    focusedItem.click();
+                  }
+                  gamepadDebounce = true;
+                  setTimeout(() => {
+                    gamepadDebounce = false;
+                  }, 200);
+                } else if (back) {
+                  // Go back to front page
+                  populateFrontPage(allConsoles);
+                  gamepadDebounce = true;
+                  setTimeout(() => {
+                    gamepadDebounce = false;
+                  }, 200);
+                }
+
+                if (nextItem) {
+                  focusGameItem(nextItem);
+                  gamepadDebounce = true;
+                  setTimeout(() => {
+                    gamepadDebounce = false;
+                  }, 200);
+                }
               }
             } else {
-              // Game items navigation
+              // Front page navigation
               let nextItem = null;
               if (up) {
                 focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                if (!nextItem) {
-                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-                }
+                nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'up');
               } else if (down) {
                 focusedRowIndex += 1;
-                if (focusedRowIndex >= gameItemsGrid.length) {
-                  focusedRowIndex -= 1;
-                }
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'down');
                 if (!nextItem) {
-                  focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                  nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                  focusedRowIndex -= 1;
                 }
               } else if (left) {
                 focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'left');
               } else if (right) {
                 focusedColumnIndex += 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
+                nextItem = getNextValidItem(focusedRowIndex, focusedColumnIndex, 'right');
                 if (!nextItem) {
                   focusedColumnIndex -= 1;
-                  // Move to alphabet nav
-                  isAlphabetNavActive = true;
-                  focusAlphabetItem(alphabetFocusedIndex);
                 }
               } else if (select) {
                 const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
                 if (focusedItem) {
                   focusedItem.click();
                 }
-              } else if (back) {
-                // Go back to front page
-                populateFrontPage(allConsoles);
+                gamepadDebounce = true;
+                setTimeout(() => {
+                  gamepadDebounce = false;
+                }, 200);
               }
 
               if (nextItem) {
                 focusGameItem(nextItem);
+                gamepadDebounce = true;
+                setTimeout(() => {
+                  gamepadDebounce = false;
+                }, 200);
               }
             }
           } else {
-            // Front page navigation
-            let nextItem = null;
-            if (up) {
-              focusedRowIndex = Math.max(focusedRowIndex - 1, 0);
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (!nextItem) {
-                focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              }
-            } else if (down) {
-              focusedRowIndex += 1;
-              if (focusedRowIndex >= gameItemsGrid.length) {
-                focusedRowIndex -= 1;
-              }
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (!nextItem) {
-                focusedColumnIndex = gameItemsGrid[focusedRowIndex].length - 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              }
-            } else if (left) {
-              focusedColumnIndex = Math.max(focusedColumnIndex - 1, 0);
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-            } else if (right) {
-              focusedColumnIndex += 1;
-              nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (!nextItem) {
-                focusedColumnIndex -= 1;
-                nextItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              }
+            // Modal is open
+            if (back) {
+              closeGameModal();
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200); // Debounce time for gamepad
             } else if (select) {
-              const focusedItem = getNextItem(focusedRowIndex, focusedColumnIndex);
-              if (focusedItem) {
-                focusedItem.click();
-              }
+              modalLaunchButton.click();
+              gamepadDebounce = true;
+              setTimeout(() => {
+                gamepadDebounce = false;
+              }, 200); // Debounce time for gamepad
             }
-
-            if (nextItem) {
-              focusGameItem(nextItem);
-            }
-          }
-        } else {
-          // Modal is open
-          if (back) {
-            closeGameModal();
-          } else if (select) {
-            modalLaunchButton.click();
           }
         }
-
-        // Update previous button states
-        prevSelectPressed = selectPressed;
-        prevBackPressed = backPressed;
-        prevStartButtonPressed = startButtonPressed;
-        prevSelectButtonPressed = selectButtonPressed;
-        prevUpPressed = upPressed;
-        prevDownPressed = downPressed;
-        prevLeftPressed = leftPressed;
-        prevRightPressed = rightPressed;
       }
 
       requestAnimationFrame(gamepadLoop);
@@ -787,6 +890,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Function to focus on a menu item
     function focusMenuItem(item) {
+      if (!item) return;
+
       // Remove focus class from previous item
       const focusedElements = document.querySelectorAll('#consoleList li.focused');
       focusedElements.forEach((el) => el.classList.remove('focused'));
@@ -900,4 +1005,39 @@ window.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('game-ended', () => {
       isGameRunning = false; // Reset flag when game ends
     });
-});
+
+    // Detect input method changes
+    document.addEventListener('mousemove', () => {
+      lastInputMethod = 'mouse';
+    });
+
+    document.addEventListener('mousedown', () => {
+      lastInputMethod = 'mouse';
+    });
+
+    document.addEventListener('keypress', () => {
+      if (lastInputMethod !== 'keyboard') {
+        lastInputMethod = 'keyboard';
+      }
+    });
+
+    // Ensure focus is visible only for keyboard navigation
+    function updateFocusStyles() {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .game-item:focus {
+          outline: none;
+        }
+        ${lastInputMethod === 'keyboard' ? `
+        .game-item.focused {
+          border: 3px solid #e50914;
+        }` : `
+        .game-item.focused {
+          border: none;
+        }`}
+      `;
+      document.head.appendChild(style);
+    }
+
+    setInterval(updateFocusStyles, 500); // Update focus styles periodically
+}); //
